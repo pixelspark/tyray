@@ -1,0 +1,7 @@
+[package]
+name = "tyray"
+version = "0.1.0"
+authors = ["Tommy van der Vorst <tommy@pixelspark.nl>"]
+
+[dependencies]
+image = "*"
