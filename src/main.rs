@@ -105,19 +105,17 @@ impl Vector {
 		let mut n = *normal;
 		if cosi < 0.0 { // if the ray is inside the object, swap the indices and invert the normal to get the correct result
 			cosi = -cosi;
-			let temp = etat;
-			etat = etai;
-			etai = temp;
+			std::mem::swap(&mut etat, &mut etai);
 			n = n.scale(-1.0);
 		}
 		let eta = etai / etat;
 		let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
 
 		if k < 0.0 {
-			return Vector { x: 1.0, y: 0.0, z: 0.0 };
+			Vector { x: 1.0, y: 0.0, z: 0.0 }
 		}
 		else {
-			return self.scale(eta).add(&n.scale(eta * cosi - k.sqrt()));
+			self.scale(eta).add(&n.scale(eta * cosi - k.sqrt()))
 		}
 	}
 }
@@ -237,7 +235,7 @@ impl Scene {
 					let (shadow_distance, shadow_obstacle) = self.intersect(&Ray { origin: shadow_origin, direction: light_direction });
 					if shadow_obstacle.is_none() || shadow_distance > light_distance {
 						// Light is not occluded
-						diffuse_intensity += light.intensity * &light_direction.dot(&normal).max(0.0);
+						diffuse_intensity += light.intensity * light_direction.dot(&normal).max(0.0);
 						let specularity = (&light_direction.scale(-1.0).reflect(&normal).scale(-1.0).dot(&ray.direction)).max(0.0).powf(material.specular_exponent);
 						specular_intensity += specularity * light.intensity;
 					}
@@ -275,7 +273,7 @@ fn main() {
 	let width = 2048;
 	let height = 2048;
 
-	let fov: f64 = 3.14159 / 2.0; // 90 degrees to radians
+	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
 
 	let ivory = Rc::new(Material {
 		albedo_diffuse: 0.6,
@@ -363,10 +361,10 @@ fn main() {
 
 	// Construct a new by repeated calls to the supplied closure.
 	let img = ImageBuffer::from_fn(width, height, |x, y| {
-		let w = width as f64;
-		let h = height as f64;
-		let fx = (2.0 * ((x as f64) + 0.5) / w - 1.0) * ((fov / 2.0) * w / h).tan();
-		let fy = (2.0 * (((height - y) as f64) + 0.5) / h - 1.0) * (fov / 2.0).tan();
+		let w = f64::from(width);
+		let h = f64::from(height);
+		let fx = (2.0 * (f64::from(x) + 0.5) / w - 1.0) * ((fov / 2.0) * w / h).tan();
+		let fy = (2.0 * (f64::from(height - y) + 0.5) / h - 1.0) * (fov / 2.0).tan();
 		let dir = Vector { x: fx, y: fy, z: -1.0 }.normalize();
 
 		let mut color = scene.cast_ray(&Ray { origin: Vector { x: 0.0, y: 0.0, z: 0.0}, direction: dir }, 6);
