@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Sub, Mul, BitXor};
 
 #[derive(Clone, Copy)]
 pub struct Vector {
@@ -37,11 +37,11 @@ impl Vector {
 	}
 
 	pub fn reflect(self: Vector, normal: Vector) -> Vector {
-		self - (normal * 2.0 * self.dot(&normal))
+		self - (normal * 2.0 * (self ^ normal))
 	}
 
 	pub fn refract(self, normal: Vector, refractive_index: f64) -> Vector {
-		let mut cosi = self.dot(&normal).min(1.0).max(-1.0);
+		let mut cosi = (self ^ normal).min(1.0).max(-1.0);
 		let mut etai = 1.0;
 		let mut etat = refractive_index;
 		let mut n = normal;
@@ -95,5 +95,13 @@ impl Mul<f64> for Vector {
 			y: self.y * scalar,
 			z: self.z * scalar
 		}
+	}
+}
+
+impl BitXor<Vector> for Vector {
+	type Output = f64;
+
+	fn bitxor(self, rhs: Vector) -> f64 {
+		self.dot(&rhs)
 	}
 }

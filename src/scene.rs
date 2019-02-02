@@ -68,7 +68,7 @@ impl Scene {
 
 					// Shadow
 					let light_distance = (light.position - point).norm();
-					let shadow_origin = match light_direction.dot(&normal) {
+					let shadow_origin = match light_direction ^ normal {
 						d if d < 0.0 => point - (normal * 0.001),
 						_ => point + (normal * 0.001)
 					};
@@ -76,8 +76,8 @@ impl Scene {
 					let (shadow_distance, shadow_obstacle) = self.intersect(&Ray { origin: shadow_origin, direction: light_direction });
 					if shadow_obstacle.is_none() || shadow_distance > light_distance {
 						// Light is not occluded
-						diffuse_intensity += light.intensity * light_direction.dot(&normal).max(0.0);
-						let specularity = (((light_direction * -1.0).reflect(normal) * -1.0).dot(&ray.direction)).max(0.0).powf(material.specular_exponent);
+						diffuse_intensity += light.intensity * (light_direction ^ normal).max(0.0);
+						let specularity = (((light_direction * -1.0).reflect(normal) * -1.0) ^ ray.direction).max(0.0).powf(material.specular_exponent);
 						specular_intensity += specularity * light.intensity;
 					}
 				}
@@ -86,7 +86,7 @@ impl Scene {
 
 				// Reflection
 				let reflect_direction = ray.direction.reflect(normal).normalize();
-				let reflect_origin = match reflect_direction.dot(&normal) {
+				let reflect_origin = match reflect_direction ^ normal {
 						d if d < 0.0 => point - (normal * 0.001),
 						_ => point + (normal * 0.001)
 					};
@@ -94,7 +94,7 @@ impl Scene {
 
 				// Refraction
 				let refract_direction = ray.direction.refract(normal, material.refractive_index).normalize();
-				let refract_origin = match refract_direction.dot(&normal) {
+				let refract_origin = match refract_direction ^ normal {
 						d if d < 0.0 => point - (normal * 0.001),
 						_ => point + (normal * 0.001)
 					};
