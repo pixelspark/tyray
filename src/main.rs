@@ -10,10 +10,12 @@ use geometry::{Vector, Ray};
 use scene::{Light, Material, Scene, Sphere, Plane};
 
 fn main() {
-	let width = 2048;
-	let height = 2048;
+	let width = 512;
+	let height = 512;
 
 	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
+
+	println!("Configuring scene...");
 
 	let ivory = Arc::new(Material {
 		albedo_diffuse: 0.6,
@@ -67,6 +69,7 @@ fn main() {
 
 	let scene = Arc::new(Scene {
 		environment_color: Vector { x: 0.2, y: 0.7, z: 0.8 },
+		environment_map: Some(image::open("./envmap.jpg").unwrap()),
 		objects: vec![
 			Arc::new(Sphere {
 				center: Vector { x: -3.0, y: 0.0, z: -16.0 }, radius: 6.0, material: ivory.clone()
@@ -98,6 +101,8 @@ fn main() {
 			Light { position: Vector { x: 30.0, y: 20.0, z: 30.0 }, intensity: 1.7 }
 		]
 	});
+
+	println!("Start rendering...");
 
 	let image: Vec<Vec<_>> = (0 .. height).into_par_iter().map(move |y| {
 		(0 .. width).map(|x| {

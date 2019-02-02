@@ -1,10 +1,13 @@
+extern crate image;
 use super::geometry::{Vector, Ray};
 use std::sync::{Arc};
+use image::{DynamicImage, GenericImageView};
 
 pub struct Scene {
 	pub objects: Vec<Arc<Object>>,
 	pub lights: Vec<Light>,
-	pub environment_color: Vector
+	pub environment_color: Vector,
+	pub environment_map: Option<DynamicImage>
 }
 
 pub struct Light {
@@ -119,7 +122,21 @@ impl Scene {
 		}
 
 		// Environment
-		self.environment_color
+		let env_dir = ray.extend(1.0).normalize();
+		match &self.environment_map {
+			Some(image) => { 
+				let ew = f64::from(image.width());
+				let eh = f64::from(image.height());
+
+				// https://stackoverflow.com/questions/39283698/direction-to-environment-map-uv-coordinates
+				let m = (env_dir.x * env_dir.x + env_dir.y * env_dir.y + env_dir.z * env_dir.z).sqrt() * 2.0;
+				let ex = ((env_dir.x / m  + 0.5) * ew) as u32;
+				let ey = ((-env_dir.y / m + 0.5) * eh) as u32;
+				let color = image.get_pixel(ex, ey);
+				Vector { x: f64::from(color[0]) / 255.0, y: f64::from(color[1]) / 255.0, z: f64::from(color[2]) / 255.0 }
+			},
+			None => self.environment_color
+		}
 	}
 }
 
