@@ -1,6 +1,8 @@
 extern crate image;
-use std::rc::Rc;
+extern crate rayon;
+use std::sync::{Arc};
 use image::{ImageBuffer};
+use rayon::prelude::*;
 
 #[derive(Clone, Copy)]
 struct Vector {
@@ -24,7 +26,7 @@ struct Material {
 struct Sphere {
 	center: Vector,
 	radius: f64,
-	material: Rc<Material>
+	material: Arc<Material>
 }
 
 struct Plane {
@@ -33,12 +35,12 @@ struct Plane {
 	x_max: f64,
 	z_min: f64,
 	z_max: f64,
-	material: Rc<Material>
+	material: Arc<Material>
 }
 
-trait Object {
+trait Object: Send + Sync {
 	fn intersect(&self, ray: &Ray) -> Option<f64>;
-	fn material(&self) -> Rc<Material>;
+	fn material(&self) -> Arc<Material>;
 	fn normal_at(&self, point: &Vector) -> Vector;
 }
 
@@ -142,7 +144,7 @@ impl Object for Plane {
 		None
 	}
 
-	fn material(&self) -> Rc<Material> {
+	fn material(&self) -> Arc<Material> {
 		self.material.clone()
 	}
 
@@ -176,7 +178,7 @@ impl Object for Sphere {
 		}
 	}
 
-	fn material(&self) -> Rc<Material> {
+	fn material(&self) -> Arc<Material> {
 		self.material.clone()
 	}
 
@@ -186,15 +188,15 @@ impl Object for Sphere {
 }
 
 struct Scene {
-	objects: Vec<Rc<Box<Object>>>,
+	objects: Vec<Arc<Object>>,
 	lights: Vec<Light>,
 	environment_color: Vector
 }
 
 impl Scene {
-	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Rc<Box<Object>>>) {
+	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Arc<Object>>) {
 		let mut min_dist: f64 = std::f64::MAX;
-		let mut hit_object: Option<Rc<Box<Object>>> = None;
+		let mut hit_object: Option<Arc<Object>> = None;
 
 		// Find the first object hit by this ray
 		for object in &self.objects {
@@ -275,7 +277,7 @@ fn main() {
 
 	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
 
-	let ivory = Rc::new(Material {
+	let ivory = Arc::new(Material {
 		albedo_diffuse: 0.6,
 		albedo_specular: 0.3,
 		albedo_reflect: 0.1,
@@ -285,7 +287,7 @@ fn main() {
 		refractive_index: 1.0
 	});
 
-	let red_rubber = Rc::new(Material {
+	let red_rubber = Arc::new(Material {
 		albedo_diffuse: 0.9,
 		albedo_specular: 0.1,
 		albedo_reflect: 0.0,
@@ -295,7 +297,7 @@ fn main() {
 		refractive_index: 1.0
 	});
 
-	let mirror = Rc::new(Material {
+	let mirror = Arc::new(Material {
 		albedo_diffuse: 0.0,
 		albedo_specular: 10.0,
 		albedo_reflect: 0.8,
@@ -305,7 +307,7 @@ fn main() {
 		refractive_index: 1.0
 	});
 
-	let glass = Rc::new(Material {
+	let glass = Arc::new(Material {
 		albedo_diffuse: 0.0,
 		albedo_specular: 0.5,
 		albedo_reflect: 0.1,
@@ -315,7 +317,7 @@ fn main() {
 		refractive_index: 1.3
 	});
 
-	let floor = Rc::new(Material {
+	let floor = Arc::new(Material {
 		albedo_diffuse: 0.6,
 		albedo_specular: 0.3,
 		albedo_reflect: 0.2,
@@ -325,62 +327,74 @@ fn main() {
 		refractive_index: 1.0
 	});
 
-	let scene = Scene {
+	let scene = Arc::new(Scene {
 		environment_color: Vector { x: 0.2, y: 0.7, z: 0.8 },
 		objects: vec![
-			Rc::new(Box::new(Sphere {
+			Arc::new(Sphere {
 				center: Vector { x: -3.0, y: 0.0, z: -16.0 }, radius: 6.0, material: ivory.clone()
-			})),
-			Rc::new(Box::new(Sphere {
+			}),
+			Arc::new(Sphere {
 				center: Vector { x: -1.0, y: -1.5, z: -8.0 }, radius: 2.0, material: glass.clone()
-			})),
-			Rc::new(Box::new(Sphere {
+			}),
+			Arc::new(Sphere {
 				center: Vector { x: 5.0, y: -3.0, z: -8.0 }, radius: 2.0, material: glass.clone()
-			})),
-			Rc::new(Box::new(Sphere {
+			}),
+			Arc::new(Sphere {
 				center: Vector { x: 1.5, y: -0.5, z: -18.0 }, radius: 3.0, material: red_rubber.clone()
-			})),
-			Rc::new(Box::new(Sphere {
+			}),
+			Arc::new(Sphere {
 				center: Vector { x: 7.0, y: 5.0, z: -18.0 }, radius: 4.0, material: ivory.clone()
-			})),
-			Rc::new(Box::new(Plane {
+			}),
+			Arc::new(Plane {
 				x_min: -10.0,
 				x_max: 10.0,
 				z_min: -100.0,
 				z_max: -5.0,
 				y: -3.0,
 				material: floor.clone()
-			}))
+			})
 		],
 		lights: vec![
 			Light { position: Vector { x: -20.0, y: 20.0, z: 20.0 }, intensity: 1.5 },
 			Light { position: Vector { x: 30.0, y: 50.0, z: -25.0 }, intensity: 1.8 },
 			Light { position: Vector { x: 30.0, y: 20.0, z: 30.0 }, intensity: 1.7 }
 		]
-	};
-
-	// Construct a new by repeated calls to the supplied closure.
-	let img = ImageBuffer::from_fn(width, height, |x, y| {
-		let w = f64::from(width);
-		let h = f64::from(height);
-		let fx = (2.0 * (f64::from(x) + 0.5) / w - 1.0) * ((fov / 2.0) * w / h).tan();
-		let fy = (2.0 * (f64::from(height - y) + 0.5) / h - 1.0) * (fov / 2.0).tan();
-		let dir = Vector { x: fx, y: fy, z: -1.0 }.normalize();
-
-		let mut color = scene.cast_ray(&Ray { origin: Vector { x: 0.0, y: 0.0, z: 0.0}, direction: dir }, 6);
-
-		// Scale color
-		let max = color.x.max(color.y.max(color.z));
-		if max > 1.0 {
-			color = color.scale(1.0 / max);
-		}
-
-		image::Rgb([
-			(color.x * 255.0).min(255.0).max(0.0) as u8,
-			(color.y * 255.0).min(255.0).max(0.0) as u8,
-			(color.z * 255.0).min(255.0).max(0.0) as u8
-		])
 	});
 
+	let image: Vec<Vec<_>> = (0 .. height).into_par_iter().map(move |y| {
+		(0 .. width).map(|x| {
+			let w = f64::from(width);
+			let h = f64::from(height);
+			let fx = (2.0 * (f64::from(x) + 0.5) / w - 1.0) * ((fov / 2.0) * w / h).tan();
+			let fy = (2.0 * (f64::from(height - y) + 0.5) / h - 1.0) * (fov / 2.0).tan();
+			let dir = Vector { x: fx, y: fy, z: -1.0 }.normalize();
+
+			let mut color = scene.cast_ray(&Ray { origin: Vector { x: 0.0, y: 0.0, z: 0.0}, direction: dir }, 6);
+
+			// Scale color
+			let max = color.x.max(color.y.max(color.z));
+			if max > 1.0 {
+				color = color.scale(1.0 / max);
+			}
+
+			(x, y, image::Rgb([
+				(color.x * 255.0).min(255.0).max(0.0) as u8,
+				(color.y * 255.0).min(255.0).max(0.0) as u8,
+				(color.z * 255.0).min(255.0).max(0.0) as u8
+			]))
+		}).collect()
+	}).collect();
+
+	println!("Rendered, writing to image...");
+
+	let mut img = ImageBuffer::new(width, height);
+
+	for row in image.iter() {
+		for pixel in row {
+			img.put_pixel(pixel.0, pixel.1, pixel.2)
+		}
+	}
+
+	println!("Written, writing to disk...");
 	img.save("test.png").unwrap();
 }
