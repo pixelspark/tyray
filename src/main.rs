@@ -2,16 +2,18 @@ extern crate image;
 extern crate rayon;
 mod geometry;
 mod scene;
+mod primitives;
 
 use std::sync::{Arc};
 use image::{ImageBuffer};
 use rayon::prelude::*;
 use geometry::{Vector, Ray};
-use scene::{Light, Material, Scene, Sphere, Plane};
+use scene::{Light, Material, Scene};
+use primitives::{Sphere, Plane};
 
 fn main() {
-	let width = 512;
-	let height = 512;
+	let width = 2048;
+	let height = 2048;
 
 	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
 
@@ -117,7 +119,7 @@ fn main() {
 			// Scale color
 			let max = color.x.max(color.y.max(color.z));
 			if max > 1.0 {
-				color = color.scale(1.0 / max);
+				color = color * (1.0 / max);
 			}
 
 			(x, y, image::Rgb([
