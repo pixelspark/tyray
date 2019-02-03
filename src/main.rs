@@ -116,7 +116,7 @@ fn main() {
 
 	let scene = Arc::new(Scene {
 		environment_color: Vector { x: 0.2, y: 0.7, z: 0.8 },
-		environment_map: None, //Some(image::open("./envmap.jpg").unwrap()),
+		environment_map: Some(image::open("./envmap.jpg").unwrap()),
 		objects: vec![
 			Arc::new(Sphere {
 				center: Vector { x: -3.0, y: 0.0, z: -16.0 }, radius: 6.0, material: ivory.clone()
@@ -141,6 +141,9 @@ fn main() {
 				y: -3.0,
 				material: floor.clone()
 			})
+			/*Arc::new(Sphere {
+				center: Vector { x: 0.0, y: 0.0, z: -16.0 }, radius: 12.0, material: mirror.clone()
+			})*/
 		],
 		lights: vec![
 			Light { position: Vector { x: -20.0, y: 20.0, z: 20.0 }, intensity: 1.5 },

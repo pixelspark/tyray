@@ -104,17 +104,22 @@ impl Scene {
 		}
 
 		// Environment
-		let env_dir = ray.extend(1.0).normalize();
+		let env_dir = ray.direction();
 		match &self.environment_map {
 			Some(image) => { 
 				let ew = f64::from(image.width());
 				let eh = f64::from(image.height());
 
+				// Spherical
+				/*let m = env_dir.x.powf(2.0) + env_dir.y.powf(2.0) + (env_dir.z + 1.0).powf(2.0);
+				let ex = (((env_dir.x / m) / 2.0 + 0.5) * ew) as u32;
+				let ey = (((-env_dir.y / m) / 2.0 + 0.5) * eh) as u32;*/
+
 				// https://stackoverflow.com/questions/39283698/direction-to-environment-map-uv-coordinates
-				let m = (env_dir.x * env_dir.x + env_dir.y * env_dir.y + env_dir.z * env_dir.z).sqrt() * 2.0;
-				let ex = ((env_dir.x / m  + 0.5) * ew) as u32;
+				let m = env_dir.norm() * 2.0;
+				let ex = ((-env_dir.z / m  + 0.5) * ew) as u32;
 				let ey = ((-env_dir.y / m + 0.5) * eh) as u32;
-				let color = image.get_pixel(ex, ey);
+				let color = image.get_pixel(ex.min(image.width() - 1).max(0), ey.min(image.height() - 1).max(0));
 				Vector { x: f64::from(color[0]) / 255.0, y: f64::from(color[1]) / 255.0, z: f64::from(color[2]) / 255.0 }
 			},
 			None => self.environment_color
