@@ -1,12 +1,12 @@
+use super::geometry::{Ray, Vector};
 use super::scene::{Material, Traceable};
-use std::sync::{Arc};
-use super::geometry::{Vector, Ray};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Sphere {
 	pub center: Vector,
 	pub radius: f64,
-	pub material: Arc<Material>
+	pub material: Arc<Material>,
 }
 
 pub struct Plane {
@@ -15,7 +15,7 @@ pub struct Plane {
 	pub x_max: f64,
 	pub z_min: f64,
 	pub z_max: f64,
-	pub material: Arc<Material>
+	pub material: Arc<Material>,
 }
 
 impl Traceable for Plane {
@@ -39,7 +39,11 @@ impl Traceable for Plane {
 	}
 
 	fn normal_at(&self, _point: &Vector) -> Vector {
-		Vector { x: 0.0, y: 1.0, z: 0.0 }
+		Vector {
+			x: 0.0,
+			y: 1.0,
+			z: 0.0,
+		}
 	}
 }
 
@@ -51,17 +55,16 @@ impl Traceable for Sphere {
 
 		if d2 > self.radius {
 			None
-		}
-		else {
+		} else {
 			let thc = ((self.radius * self.radius) - d2).sqrt();
 			let mut t0 = tca - thc;
 			let t1 = tca + thc;
-			
+
 			if t0 < 0.0 {
 				t0 = t1
 			}
 			if t0 < 0.0 {
-				return None
+				return None;
 			}
 
 			Some(t0)

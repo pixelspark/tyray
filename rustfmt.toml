@@ -1,0 +1,9 @@
+hard_tabs = true
+tab_spaces = 4
+use_field_init_shorthand = true
+edition = "2018"
+
+# Unstable features
+#control_brace_style = "ClosingNextLine"
+#report_todo = "Always"
+#report_fixme = "Always"

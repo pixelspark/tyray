@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, BitXor};
+use std::ops::{Add, BitXor, Mul, Sub};
 
 /** A three-dimensional vector. */
 #[derive(Clone, Copy)]
@@ -11,14 +11,14 @@ pub struct Vector {
 /** A ray consisting of an origin point and a direction vector (normalized). */
 pub struct Ray {
 	origin: Vector,
-	direction: Vector
+	direction: Vector,
 }
 
 impl Ray {
 	pub fn new(origin: Vector, direction: Vector) -> Ray {
 		Ray {
 			origin,
-			direction: direction.normalize()
+			direction: direction.normalize(),
 		}
 	}
 
@@ -51,7 +51,7 @@ impl Vector {
 		Vector {
 			x: self.x / norm,
 			y: self.y / norm,
-			z: self.z / norm
+			z: self.z / norm,
 		}
 	}
 
@@ -64,7 +64,8 @@ impl Vector {
 		let mut etai = 1.0;
 		let mut etat = refractive_index;
 		let mut n = normal;
-		if cosi < 0.0 { // if the ray is inside the object, swap the indices and invert the normal to get the correct result
+		if cosi < 0.0 {
+			// if the ray is inside the object, swap the indices and invert the normal to get the correct result
 			cosi = -cosi;
 			std::mem::swap(&mut etat, &mut etai);
 			n = n * -1.0;
@@ -73,9 +74,12 @@ impl Vector {
 		let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
 
 		if k < 0.0 {
-			Vector { x: 1.0, y: 0.0, z: 0.0 }
-		}
-		else {
+			Vector {
+				x: 1.0,
+				y: 0.0,
+				z: 0.0,
+			}
+		} else {
 			(self * eta) + (n * (eta * cosi - k.sqrt()))
 		}
 	}
@@ -88,19 +92,19 @@ impl Add for Vector {
 		Vector {
 			x: self.x + other.x,
 			y: self.y + other.y,
-			z: self.z + other.z
+			z: self.z + other.z,
 		}
 	}
 }
 
 impl Sub for Vector {
 	type Output = Vector;
-	
+
 	fn sub(self, other: Vector) -> Vector {
 		Vector {
 			x: self.x - other.x,
 			y: self.y - other.y,
-			z: self.z - other.z
+			z: self.z - other.z,
 		}
 	}
 }
@@ -113,7 +117,7 @@ impl Mul<f64> for Vector {
 		Vector {
 			x: self.x * scalar,
 			y: self.y * scalar,
-			z: self.z * scalar
+			z: self.z * scalar,
 		}
 	}
 }
