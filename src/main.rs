@@ -42,6 +42,12 @@ fn main() {
 			.help("Field of view angle")
 			.default_value("90")
 			.required(true)
+		)
+		.arg(Arg::with_name("depth")
+			.long("depth")
+			.help("Ray tracing depth")
+			.default_value("6")
+			.required(true)
 		);
 	
 	let matches = app.get_matches();
@@ -51,7 +57,9 @@ fn main() {
 	let width = matches.value_of("width").unwrap().parse().expect("invalid width");
 	let height = matches.value_of("height").unwrap().parse().expect("invalid width");
 	let fov_angle: f64 = matches.value_of("fov").unwrap().parse().expect("invalid fov");
+	let max_depth: i32 = matches.value_of("depth").unwrap().parse().expect("invalid depth");
 	assert!(width > 0);
+	assert!(max_depth > 0);
 	assert!(height > 0);
 	assert!(fov_angle > 0.0 && fov_angle <= 360.0);
 
@@ -157,7 +165,7 @@ fn main() {
 			let fy = (2.0 * (f64::from(height - y) + 0.5) / h - 1.0) * (fov / 2.0).tan();
 			let dir = Vector { x: fx, y: fy, z: -1.0 }.normalize();
 
-			let mut color = scene.cast_ray(&Ray::new(Vector { x: 0.0, y: 0.0, z: 0.0 }, dir), 6);
+			let mut color = scene.cast_ray(&Ray::new(Vector { x: 0.0, y: 0.0, z: 0.0 }, dir), max_depth);
 
 			// Scale color
 			let max = color.x.max(color.y.max(color.z));
