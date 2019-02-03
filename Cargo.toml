@@ -6,3 +6,4 @@ authors = ["Tommy van der Vorst <tommy@pixelspark.nl>"]
 [dependencies]
 image = "*"
 rayon = "*"
+clap = "*"

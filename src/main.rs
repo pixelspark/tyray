@@ -1,5 +1,7 @@
 extern crate image;
 extern crate rayon;
+extern crate clap;
+
 mod geometry;
 mod scene;
 mod primitives;
@@ -10,14 +12,51 @@ use rayon::prelude::*;
 use geometry::{Vector, Ray};
 use scene::{Light, Material, Scene};
 use primitives::{Sphere, Plane};
+use clap::{Arg, App};
 
 fn main() {
+	let app = App::new("tyray")
+		.version("1.0")
+		.author("Tommy van der Vorst <tommy@pixelspark.nl>")
+		.about("Ray tracer")
+		.arg(Arg::with_name("output")
+			.help("Sets the output image file")
+			.default_value("out.png")
+			.required(true)
+			.index(1)
+		)
+		.arg(Arg::with_name("width")
+			.long("width")
+			.help("Width of the output image")
+			.default_value("512")
+			.required(true)
+		)
+		.arg(Arg::with_name("height")
+			.long("height")
+			.help("Height of the output image")
+			.default_value("512")
+			.required(true)
+		)
+		.arg(Arg::with_name("fov")
+			.long("fov")
+			.help("Field of view angle")
+			.default_value("90")
+			.required(true)
+		);
+	
+	let matches = app.get_matches();
+	let output_path = matches.value_of("output").expect("no output path provided");
+
 	// Output image width and height
-	let width = 2048;
-	let height = 2048;
+	let width = matches.value_of("width").unwrap().parse().expect("invalid width");
+	let height = matches.value_of("height").unwrap().parse().expect("invalid width");
+	let fov_angle: f64 = matches.value_of("fov").unwrap().parse().expect("invalid fov");
+	assert!(width > 0);
+	assert!(height > 0);
+	assert!(fov_angle > 0.0 && fov_angle <= 360.0);
 
 	// Field of view
-	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
+	let fov: f64 = std::f64::consts::PI * 2.0 * fov_angle / 360.0;
 
 	println!("Configuring scene...");
 
@@ -145,5 +184,5 @@ fn main() {
 	}
 
 	println!("Written, writing to disk...");
-	img.save("out.png").unwrap();
+	img.save(output_path).unwrap();
 }
