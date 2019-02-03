@@ -1,4 +1,4 @@
-use super::scene::{Material, Object};
+use super::scene::{Material, Traceable};
 use std::sync::{Arc};
 use super::geometry::{Vector, Ray};
 
@@ -18,9 +18,9 @@ pub struct Plane {
 	pub material: Arc<Material>
 }
 
-impl Object for Plane {
+impl Traceable for Plane {
 	fn intersect(&self, ray: &Ray) -> Option<f64> {
-		let d = -(ray.origin.y - self.y) / ray.direction.y;
+		let d = -(ray.origin().y - self.y) / ray.direction().y;
 
 		if d <= 0.0 {
 			return None;
@@ -43,11 +43,11 @@ impl Object for Plane {
 	}
 }
 
-impl Object for Sphere {
+impl Traceable for Sphere {
 	fn intersect(&self, ray: &Ray) -> Option<f64> {
-		let l = self.center - ray.origin;
-		let tca = l.dot(&ray.direction);
-		let d2 = l.dot(&l) - tca * tca;
+		let l = self.center - ray.origin();
+		let tca = l ^ ray.direction();
+		let d2 = (l ^ l) - tca * tca;
 
 		if d2 > self.radius {
 			None

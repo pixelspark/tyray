@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, BitXor};
 
+/** A three-dimensional vector. */
 #[derive(Clone, Copy)]
 pub struct Vector {
 	pub x: f64,
@@ -7,27 +8,45 @@ pub struct Vector {
 	pub z: f64,
 }
 
+/** A ray consisting of an origin point and a direction vector (normalized). */
 pub struct Ray {
-	pub origin: Vector,
-	pub direction: Vector
+	origin: Vector,
+	direction: Vector
 }
 
 impl Ray {
-	pub fn extend(self: &Ray, distance: f64) -> Vector {
+	pub fn new(origin: Vector, direction: Vector) -> Ray {
+		Ray {
+			origin: origin,
+			direction: direction.normalize()
+		}
+	}
+
+	pub fn origin(&self) -> Vector {
+		self.origin
+	}
+
+	pub fn direction(&self) -> Vector {
+		self.direction
+	}
+
+	/** Calculate the point that this ray will hit when extending it the specified distance. */
+	pub fn extend(&self, distance: f64) -> Vector {
 		self.origin + (self.direction * distance)
 	}
 }
 
 impl Vector {
-	pub fn dot(self: &Vector, other: &Vector) -> f64 {
+	pub fn dot(&self, other: &Vector) -> f64 {
 		self.x * other.x + self.y * other.y + self.z * other.z
 	}
 
-	pub fn norm(self: &Vector) -> f64 {
+	/** Norm (length) of the vector in 3D space */
+	pub fn norm(&self) -> f64 {
 		(self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
 	}
 
-	pub fn normalize(self: &Vector) -> Vector {
+	pub fn normalize(&self) -> Vector {
 		let norm = self.norm();
 		Vector {
 			x: self.x / norm,
@@ -36,8 +55,8 @@ impl Vector {
 		}
 	}
 
-	pub fn reflect(self: Vector, normal: Vector) -> Vector {
-		self - (normal * 2.0 * (self ^ normal))
+	pub fn reflect(&self, normal: Vector) -> Vector {
+		*self - (normal * 2.0 * (*self ^ normal))
 	}
 
 	pub fn refract(self, normal: Vector, refractive_index: f64) -> Vector {
@@ -65,7 +84,7 @@ impl Vector {
 impl Add for Vector {
 	type Output = Vector;
 
-	fn add(self: Vector, other: Vector) -> Vector {
+	fn add(self, other: Vector) -> Vector {
 		Vector {
 			x: self.x + other.x,
 			y: self.y + other.y,
@@ -77,7 +96,7 @@ impl Add for Vector {
 impl Sub for Vector {
 	type Output = Vector;
 	
-	fn sub(self: Vector, other: Vector) -> Vector {
+	fn sub(self, other: Vector) -> Vector {
 		Vector {
 			x: self.x - other.x,
 			y: self.y - other.y,
@@ -86,10 +105,11 @@ impl Sub for Vector {
 	}
 }
 
+/** Vector scalar multiplication */
 impl Mul<f64> for Vector {
 	type Output = Vector;
 
-	fn mul(self: Vector, scalar: f64) -> Vector {
+	fn mul(self, scalar: f64) -> Vector {
 		Vector {
 			x: self.x * scalar,
 			y: self.y * scalar,
@@ -98,6 +118,7 @@ impl Mul<f64> for Vector {
 	}
 }
 
+/** Vector dot product */
 impl BitXor<Vector> for Vector {
 	type Output = f64;
 

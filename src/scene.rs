@@ -4,7 +4,7 @@ use std::sync::{Arc};
 use image::{DynamicImage, GenericImageView};
 
 pub struct Scene {
-	pub objects: Vec<Arc<Object>>,
+	pub objects: Vec<Arc<Traceable>>,
 	pub lights: Vec<Light>,
 	pub environment_color: Vector,
 	pub environment_map: Option<DynamicImage>
@@ -26,16 +26,16 @@ pub struct Material {
 	pub refractive_index: f64
 }
 
-pub trait Object: Send + Sync {
+pub trait Traceable: Send + Sync {
 	fn intersect(&self, ray: &Ray) -> Option<f64>;
 	fn material(&self) -> Arc<Material>;
 	fn normal_at(&self, point: &Vector) -> Vector;
 }
 
 impl Scene {
-	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Arc<Object>>) {
+	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Arc<Traceable>>) {
 		let mut min_dist: f64 = std::f64::MAX;
-		let mut hit_object: Option<Arc<Object>> = None;
+		let mut hit_object: Option<Arc<Traceable>> = None;
 
 		// Find the first object hit by this ray
 		for object in &self.objects {
@@ -48,6 +48,14 @@ impl Scene {
 		}
 
 		(min_dist, hit_object)
+	}
+
+	fn offset_orig(dir: Vector, point: Vector, n: Vector) -> Vector {
+		if (dir ^ n) < 0.0 {
+			point - (n * 1e-3)
+		} else {
+			point + (n * 1e-3)
+		}
 	}
 
 	pub fn cast_ray(self: &Scene, ray: &Ray, depth: i32) -> Vector {
@@ -68,16 +76,13 @@ impl Scene {
 
 					// Shadow
 					let light_distance = (light.position - point).norm();
-					let shadow_origin = match light_direction ^ normal {
-						d if d < 0.0 => point - (normal * 0.001),
-						_ => point + (normal * 0.001)
-					};
+					let shadow_origin = Scene::offset_orig(light_direction, point, normal);
 
-					let (shadow_distance, shadow_obstacle) = self.intersect(&Ray { origin: shadow_origin, direction: light_direction });
+					let (shadow_distance, shadow_obstacle) = self.intersect(&Ray::new(shadow_origin, light_direction));
 					if shadow_obstacle.is_none() || shadow_distance > light_distance {
 						// Light is not occluded
 						diffuse_intensity += light.intensity * (light_direction ^ normal).max(0.0);
-						let specularity = (((light_direction * -1.0).reflect(normal) * -1.0) ^ ray.direction).max(0.0).powf(material.specular_exponent);
+						let specularity = (((light_direction * -1.0).reflect(normal) * -1.0) ^ ray.direction()).max(0.0).powf(material.specular_exponent);
 						specular_intensity += specularity * light.intensity;
 					}
 				}
@@ -85,20 +90,14 @@ impl Scene {
 				let specular_color = Vector {x: 1.0, y: 1.0, z: 1.0} * specular_intensity * material.albedo_specular;
 
 				// Reflection
-				let reflect_direction = ray.direction.reflect(normal).normalize();
-				let reflect_origin = match reflect_direction ^ normal {
-						d if d < 0.0 => point - (normal * 0.001),
-						_ => point + (normal * 0.001)
-					};
-				let reflect_color = self.cast_ray(&Ray { origin: reflect_origin, direction: reflect_direction }, depth - 1) * material.albedo_reflect;
+				let reflect_direction = ray.direction().reflect(normal).normalize();
+				let reflect_origin = Scene::offset_orig(reflect_direction, point, normal);
+				let reflect_color = self.cast_ray(&Ray::new(reflect_origin, reflect_direction), depth - 1) * material.albedo_reflect;
 
 				// Refraction
-				let refract_direction = ray.direction.refract(normal, material.refractive_index).normalize();
-				let refract_origin = match refract_direction ^ normal {
-						d if d < 0.0 => point - (normal * 0.001),
-						_ => point + (normal * 0.001)
-					};
-				let refract_color = self.cast_ray(&Ray { origin: refract_origin, direction: refract_direction }, depth - 1) * material.albedo_refract;
+				let refract_direction = ray.direction().refract(normal, material.refractive_index).normalize();
+				let refract_origin = Scene::offset_orig(refract_direction, point, normal);
+				let refract_color = self.cast_ray(&Ray::new(refract_origin, refract_direction), depth - 1) * material.albedo_refract;
 
 				// Determine lit pixel color
 				return diffuse_color + specular_color + reflect_color + refract_color;

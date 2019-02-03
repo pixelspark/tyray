@@ -12,9 +12,11 @@ use scene::{Light, Material, Scene};
 use primitives::{Sphere, Plane};
 
 fn main() {
+	// Output image width and height
 	let width = 2048;
 	let height = 2048;
 
+	// Field of view
 	let fov: f64 = std::f64::consts::PI / 2.0; // 90 degrees to radians
 
 	println!("Configuring scene...");
@@ -53,25 +55,25 @@ fn main() {
 		albedo_diffuse: 0.0,
 		albedo_specular: 0.5,
 		albedo_reflect: 0.1,
-		albedo_refract: 0.9,
+		albedo_refract: 0.8,
 		diffuse_color: Vector { x: 0.6, y: 0.7, z: 0.8 },
 		specular_exponent: 125.0,
 		refractive_index: 1.3
 	});
 
 	let floor = Arc::new(Material {
-		albedo_diffuse: 0.6,
+		albedo_diffuse: 0.3,
 		albedo_specular: 0.3,
-		albedo_reflect: 0.2,
+		albedo_reflect: 0.5,
 		albedo_refract: 0.0,
-		diffuse_color: Vector { x: 0.2, y: 0.2, z: 0.2 },
+		diffuse_color: Vector { x: 0.7, y: 0.7, z: 0.2 },
 		specular_exponent: 100.0,
 		refractive_index: 1.0
 	});
 
 	let scene = Arc::new(Scene {
 		environment_color: Vector { x: 0.2, y: 0.7, z: 0.8 },
-		environment_map: Some(image::open("./envmap.jpg").unwrap()),
+		environment_map: None, //Some(image::open("./envmap.jpg").unwrap()),
 		objects: vec![
 			Arc::new(Sphere {
 				center: Vector { x: -3.0, y: 0.0, z: -16.0 }, radius: 6.0, material: ivory.clone()
@@ -106,7 +108,9 @@ fn main() {
 
 	println!("Start rendering...");
 
+	// Iterate over all horizontal lines in parallel and render each line
 	let image: Vec<Vec<_>> = (0 .. height).into_par_iter().map(move |y| {
+		// Render each pixel on this line
 		(0 .. width).map(|x| {
 			let w = f64::from(width);
 			let h = f64::from(height);
@@ -114,7 +118,7 @@ fn main() {
 			let fy = (2.0 * (f64::from(height - y) + 0.5) / h - 1.0) * (fov / 2.0).tan();
 			let dir = Vector { x: fx, y: fy, z: -1.0 }.normalize();
 
-			let mut color = scene.cast_ray(&Ray { origin: Vector { x: 0.0, y: 0.0, z: 0.0}, direction: dir }, 6);
+			let mut color = scene.cast_ray(&Ray::new(Vector { x: 0.0, y: 0.0, z: 0.0 }, dir), 6);
 
 			// Scale color
 			let max = color.x.max(color.y.max(color.z));
@@ -141,5 +145,5 @@ fn main() {
 	}
 
 	println!("Written, writing to disk...");
-	img.save("test.png").unwrap();
+	img.save("out.png").unwrap();
 }
