@@ -1,5 +1,4 @@
 use std::ops::{Add, Sub, Mul, BitXor};
-use rand::*;
 
 /** A three-dimensional vector. */
 #[derive(Clone, Copy)]
@@ -18,7 +17,7 @@ pub struct Ray {
 impl Ray {
 	pub fn new(origin: Vector, direction: Vector) -> Ray {
 		Ray {
-			origin: origin,
+			origin,
 			direction: direction.normalize()
 		}
 	}

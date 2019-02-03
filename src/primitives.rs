@@ -47,7 +47,7 @@ impl Traceable for Sphere {
 	fn intersect(&self, ray: &Ray) -> Option<f64> {
 		let l = self.center - ray.origin();
 		let tca = l ^ ray.direction();
-		let d2 = (l ^ l) - tca * tca;
+		let d2 = l.dot(&l) - tca * tca;
 
 		if d2 > self.radius {
 			None
