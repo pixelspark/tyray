@@ -1,7 +1,3 @@
-extern crate image;
-extern crate rayon;
-extern crate clap;
-
 mod geometry;
 mod scene;
 mod primitives;

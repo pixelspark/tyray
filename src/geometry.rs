@@ -1,4 +1,5 @@
 use std::ops::{Add, Sub, Mul, BitXor};
+use rand::*;
 
 /** A three-dimensional vector. */
 #[derive(Clone, Copy)]

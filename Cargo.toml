@@ -2,8 +2,10 @@
 name = "tyray"
 version = "0.1.0"
 authors = ["Tommy van der Vorst <tommy@pixelspark.nl>"]
+edition = "2018"
 
 [dependencies]
 image = "*"
 rayon = "*"
 clap = "*"
+rand = "0.6"

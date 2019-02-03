@@ -1,4 +1,3 @@
-extern crate image;
 use super::geometry::{Vector, Ray};
 use std::sync::{Arc};
 use image::{DynamicImage, GenericImageView};
