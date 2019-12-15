@@ -3,7 +3,7 @@ use image::{DynamicImage, GenericImageView};
 use std::sync::Arc;
 
 pub struct Scene {
-	pub objects: Vec<Arc<Traceable>>,
+	pub objects: Vec<Arc<dyn Traceable>>,
 	pub lights: Vec<Light>,
 	pub environment_color: Vector,
 	pub environment_map: Option<DynamicImage>,
@@ -32,9 +32,9 @@ pub trait Traceable: Send + Sync {
 }
 
 impl Scene {
-	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Arc<Traceable>>) {
+	fn intersect(self: &Scene, ray: &Ray) -> (f64, Option<Arc<dyn Traceable>>) {
 		let mut min_dist: f64 = std::f64::MAX;
-		let mut hit_object: Option<Arc<Traceable>> = None;
+		let mut hit_object: Option<Arc<dyn Traceable>> = None;
 
 		// Find the first object hit by this ray
 		for object in &self.objects {
